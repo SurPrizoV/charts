@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>График компетенций</title>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: 'Roboto', serif;
+        font-weight: 700;
+        font-style: normal;
+      }
+      
+      .line {
+        stroke-width: 2px;
+        opacity: 0;
+      }
+
+      .inner-border,
+      .outer-border {
+        fill: none;
+        stroke: rgba(173, 173, 173, 1);
+        stroke-width: 2.35px;
+      }
+
+      .competency-circle,
+      .skill-circle {
+        fill: rgba(173, 173, 173, 1);
+        stroke: none;
+        r: 10;
+      }
+      .competency-circle.active-main,
+      .skill-circle.active-main {
+        fill: rgba(0, 163, 114, 1);
+      }
+      .competency-circle.active-outer,
+      .skill-circle.active-outer {
+        fill: none;
+        stroke: rgba(0, 163, 114, 1);
+        stroke-width: 2px;
+      }
+      .skill-circle.active-main {
+        fill: rgba(255, 122, 0, 1);
+      }
+      .skill-circle.inactive {
+        fill: rgba(255, 212, 173, 1);
+      }
+
+      text.inactive-text {
+        fill: rgba(173, 173, 173, 1);
+        font-size: 10px;
+      }
+      text.active-text {
+        fill: black;
+        font-size: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <svg width="800" height="800"></svg>
+    <script>
+      const data = [
+        {
+          name: 'Финансовый аналитик',
+          mainSkills: ['Excel', 'SQL', 'VBA', '1С'],
+          otherSkills: ['Power BI', 'Python'],
+        },
+        {
+          name: 'Предприниматель',
+          mainSkills: ['1C', 'Excel', 'Power BI'],
+          otherSkills: [
+            'Google Analytics',
+            'Яндекс.Метрика',
+            'Python',
+            'SQL',
+            'Tilda',
+          ],
+        },
+        {
+          name: 'Продуктовый дизайнер',
+          mainSkills: [
+            'Figma',
+            'Sketch',
+            'Illustrator',
+            'Photoshop',
+            'Principle',
+            'Tilda',
+          ],
+          otherSkills: ['Shopify', 'Protopie', 'Cinema 4D'],
+        },
+        {
+          name: 'Менеджер проекта',
+          mainSkills: [
+            'Visio',
+            '1C',
+            'Google Analytics',
+            'Яндекс.Метрика',
+            'Python',
+            'SQL',
+            'Tilda',
+          ],
+          otherSkills: ['Figma', 'Sketch', 'Shopify'],
+        },
+        {
+          name: 'Финансовый менеджер',
+          mainSkills: ['1C', 'Excel', 'Power BI'],
+          otherSkills: ['BPMN'],
+        },
+        {
+          name: 'Руководитель финансового департамента компании',
+          mainSkills: ['Sketch', 'Figma'],
+          otherSkills: ['Shopify', 'HQL'],
+        },
+        {
+          name: 'Продуктовый аналитик',
+          mainSkills: [
+            'Google Analytics',
+            'Яндекс.Метрика',
+            'SQL',
+            'Power BI',
+            'Python',
+            'Excel',
+          ],
+          otherSkills: ['HQL', 'Tableau', 'R', 'Machine learning'],
+        },
+        {
+          name: 'Руководитель финансового продукта',
+          mainSkills: ['Visio'],
+          otherSkills: ['Python'],
+        },
+        {
+          name: 'Менеджер по маркетингу',
+          mainSkills: [
+            'Google Analytics',
+            'Яндекс.Метрика',
+            'Google Ads',
+            'Ahrefs',
+            'Главред',
+            'My Target',
+          ],
+          otherSkills: ['Tilda', 'Photoshop', 'Xenu', 'Python'],
+        },
+        {
+          name: 'Менеджер по цифровой трансформации',
+          mainSkills: [
+            'Visio',
+            'Google Analytics',
+            'Яндекс.Метрика',
+            'Python',
+            'SQL',
+            'Tilda',
+          ],
+          otherSkills: ['Figma', 'Sketch', 'Shopify'],
+        },
+      ];
+
+      const svg = d3.select('svg');
+      const width = svg.attr('width');
+      const height = svg.attr('height');
+      const radius = Math.min(width, height) / 2 - 40;
+
+      const g = svg
+        .append('g')
+        .attr('transform', `translate(${width / 2},${height / 2})`);
+
+      const angleScale = d3
+        .scaleBand()
+        .domain(data.map((d) => d.name))
+        .range([0, 2 * Math.PI]);
+
+      const innerRadius = radius * 0.4;
+      const outerRadius = radius * 0.8;
+
+      g.append('circle').attr('class', 'inner-border').attr('r', innerRadius);
+
+      g.append('circle').attr('class', 'outer-border').attr('r', outerRadius);
+
+      const competencies = g
+        .selectAll('.competency')
+        .data(data)
+        .enter()
+        .append('g')
+        .attr('class', 'competency')
+        .attr(
+          'transform',
+          (d) =>
+            `rotate(${
+              (angleScale(d.name) * 180) / Math.PI - 90
+            }) translate(${innerRadius},0)`
+        )
+        .on('click', (event, d) => activateCompetency(d.name));
+
+      competencies.append('circle').attr('class', 'competency-circle inactive');
+
+      competencies
+        .append('text')
+        .attr(
+          'transform',
+          (d) => `rotate(${90 - (angleScale(d.name) * 180) / Math.PI})`
+        )
+        .attr('dy', '.35em')
+        .attr('x', -20)
+        .attr('class', 'inactive-text')
+        .style('text-anchor', 'middle')
+        .text((d) => d.name);
+
+      const skills = Array.from(
+        new Set(data.flatMap((d) => d.mainSkills.concat(d.otherSkills)))
+      );
+
+      const skillAngles = d3
+        .scaleBand()
+        .domain(skills)
+        .range([0, 2 * Math.PI]);
+
+      const skillRadius = outerRadius;
+
+      const skillGroups = g
+        .selectAll('.skill')
+        .data(skills)
+        .enter()
+        .append('g')
+        .attr('class', 'skill')
+        .attr(
+          'transform',
+          (d) =>
+            `rotate(${
+              (skillAngles(d) * 180) / Math.PI - 90
+            }) translate(${skillRadius},0)`
+        )
+        .on('click', (event, d) => activateSkill(d));
+
+      skillGroups.append('circle').attr('class', 'skill-circle inactive');
+
+      skillGroups
+        .append('text')
+        .attr(
+          'transform',
+          (d) => `rotate(${90 - (skillAngles(d) * 180) / Math.PI})`
+        )
+        .attr('dy', '.35em')
+        .attr('x', 15)
+        .attr('class', 'inactive-text')
+        .style('text-anchor', 'start')
+        .text((d) => d);
+
+      function drawConnections(competencyOrSkill, isCompetency = true) {
+        g.selectAll('.line').remove();
+
+        if (isCompetency) {
+          const selected = data.find((d) => d.name === competencyOrSkill);
+          if (selected) {
+            skills.forEach((skill) => {
+              const isMainSkill = selected.mainSkills.includes(skill);
+              const isOtherSkill = selected.otherSkills.includes(skill);
+
+              if (isMainSkill || isOtherSkill) {
+                const competencyAngle = angleScale(competencyOrSkill);
+                const skillAngle = skillAngles(skill);
+
+                if (competencyAngle !== undefined && skillAngle !== undefined) {
+                  g.append('line')
+                    .attr('class', 'line')
+                    .attr(
+                      'x1',
+                      innerRadius * Math.cos(competencyAngle - Math.PI / 2)
+                    )
+                    .attr(
+                      'y1',
+                      innerRadius * Math.sin(competencyAngle - Math.PI / 2)
+                    )
+                    .attr(
+                      'x2',
+                      skillRadius * Math.cos(skillAngle - Math.PI / 2)
+                    )
+                    .attr(
+                      'y2',
+                      skillRadius * Math.sin(skillAngle - Math.PI / 2)
+                    )
+                    .attr('stroke', isMainSkill ? 'orange' : 'purple')
+                    .transition()
+                    .duration(500)
+                    .style('opacity', 1);
+                }
+              }
+            });
+          }
+        } else {
+          data.forEach((comp) => {
+            const competencyAngle = angleScale(comp.name);
+            const skillAngle = skillAngles(competencyOrSkill);
+
+            if (
+              competencyAngle !== undefined &&
+              skillAngle !== undefined &&
+              (comp.mainSkills.includes(competencyOrSkill) ||
+                comp.otherSkills.includes(competencyOrSkill))
+            ) {
+              g.append('line')
+                .attr('class', 'line')
+                .attr(
+                  'x1',
+                  innerRadius * Math.cos(competencyAngle - Math.PI / 2)
+                )
+                .attr(
+                  'y1',
+                  innerRadius * Math.sin(competencyAngle - Math.PI / 2)
+                )
+                .attr('x2', skillRadius * Math.cos(skillAngle - Math.PI / 2))
+                .attr('y2', skillRadius * Math.sin(skillAngle - Math.PI / 2))
+                .attr('stroke', 'orange')
+                .transition()
+                .duration(500)
+                .style('opacity', 1);
+            }
+          });
+        }
+      }
+
+      function activateCompetency(competency) {
+        competencies
+          .selectAll('.competency-circle')
+          .classed('active-main', (d) => d.name === competency)
+          .classed('inactive', (d) => d.name !== competency);
+        competencies
+          .selectAll('.inactive-text')
+          .classed('active-text', (d) => d.name === competency);
+
+        drawConnections(competency);
+      }
+
+      function activateSkill(skill) {
+        skillGroups
+          .selectAll('.skill-circle')
+          .classed('active-main', (d) => d === skill)
+          .classed('inactive', (d) => d !== skill);
+        skillGroups
+          .selectAll('.inactive-text')
+          .classed('active-text', (d) => d === skill);
+
+        drawConnections(skill, false);
+      }
+    </script>
+  </body>
+</html>
